@@ -1,0 +1,6 @@
+using Test;
+using MikeCee134;
+using {{ tabledto.Name }};
+{% for item in tabledto.Columns %}
+    {{ item.Type }} {{ item.Name }} = "Mike";
+{% endfor %}
