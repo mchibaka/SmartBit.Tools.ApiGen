@@ -8,6 +8,6 @@ public class ColumnDto : ILiquidizable
 
     public object ToLiquid()
     {
-        return new {Name, Type};
+        return new { Name, Type } ;
     }
 }
