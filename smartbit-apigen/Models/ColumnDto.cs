@@ -1,6 +1,6 @@
 ﻿using DotLiquid;
 using System.Net.Http.Headers;
-
+namespace SmartBit.Tools.ApiGen.Models;
 public class ColumnDto : ILiquidizable
 {
     public string Name { get; internal set; }

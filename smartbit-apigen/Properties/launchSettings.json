@@ -1,0 +1,18 @@
+{
+  "profiles": {
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    },
+    "test.dll": {
+      "commandName": "Project",
+      "commandLineArgs": "-a test.dll",
+      "workingDirectory": "C:\\Users\\Michael\\source\\repos\\ConsoleApp3\\ConsoleApp3\\bin\\Debug"
+    },
+    "consoleapp3.dll": {
+      "commandName": "Project",
+      "commandLineArgs": "-a ./net9.0/consoleapp3.dll",
+      "workingDirectory": "C:\\Users\\Michael\\source\\repos\\ConsoleApp3\\ConsoleApp3\\bin\\Debug"
+    }
+  }
+}

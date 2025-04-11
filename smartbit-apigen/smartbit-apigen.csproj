@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+	  <TargetFramework>net9.0</TargetFramework>
+	  <PackAsTool>true</PackAsTool>
+	  <ToolCommandName>smartbit-apigen</ToolCommandName>
+	  <PackageId>SmartBit.Tools.ApiGen</PackageId>
+	  <Authors>SmartBit Consulting</Authors>
+	  <PackageVersion>1.0.0</PackageVersion>
+	  <Title>SmartBit API Generator</Title>
+	  <Copyright>SmartBit Consulting</Copyright>
+	  <PackageProjectUrl>https://www.smartbitconsulting.com</PackageProjectUrl>
+	  <PackageReadmeFile>README.md</PackageReadmeFile>
+	  <PackageTags>apigen</PackageTags>
+	  <PackageIcon>icon.png</PackageIcon>
+	  <Description>Tool for generating APIs based on EF Model</Description>
+	  <PackageLicenseExpression>0BSD</PackageLicenseExpression>
+	  <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+	  <AssemblyVersion>1.0.0.1</AssemblyVersion>
+	  <FileVersion>1.0.0.1</FileVersion>
+	  <AnalysisLevel>6.0-all</AnalysisLevel>
+	  <EnableNETAnalyzers>True</EnableNETAnalyzers>	   
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="DotLiquid" Version="2.3.197" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.4" />
+    <PackageReference Include="Mono.TextTemplating" Version="3.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="entity.tt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Generator></Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\Documents\Company Documents\COMPANY LOGOS\1x\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+</Project>
