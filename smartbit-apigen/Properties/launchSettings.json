@@ -16,8 +16,8 @@
     },
     "SmartBit.WeLearn360.CoreAPI.dll": {
       "commandName": "Project",
-      "commandLineArgs": "-a SmartBit.WeLearn360.CoreAPI.dll",
-      "workingDirectory": "C:\\Users\\Michael\\source\\repos\\WeLearn360\\SmartBit.WeLearn360.CoreAPI\\bin\\Debug\\net8.0\\"
+      "commandLineArgs": "-a bin\\Debug\\net8.0\\SmartBit.WeLearn360.CoreAPI.dll -f",
+      "workingDirectory": "C:\\Users\\Michael\\source\\repos\\WeLearn360\\SmartBit.WeLearn360.CoreAPI"
     }
   }
 }
