@@ -90,7 +90,7 @@ public partial class <#= entityName #>Controller: <#= entityName #>ControllerBas
                 return Problem(validationProblem.Detail, validationProblem.Instance, validationProblem.Status, validationProblem.Title);
             }
             
-            if (db.<#= entityDbSetName #>.Where(<#= GetLinqWhereClause(entityType,"newEntityDto") #>).SingleOrDefaultAsync() != null)
+            if (await db.<#= entityDbSetName #>.Where(<#= GetLinqWhereClause(entityType,"sanitizedNewDto") #>).SingleOrDefaultAsync() != null)
             {
                 return Problem($"Duplicate trap, <#=entityName#> already exist.");                
             }
