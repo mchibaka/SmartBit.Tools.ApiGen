@@ -13,6 +13,11 @@
       "commandName": "Project",
       "commandLineArgs": "-a ./net9.0/consoleapp3.dll",
       "workingDirectory": "C:\\Users\\Michael\\source\\repos\\ConsoleApp3\\ConsoleApp3\\bin\\Debug"
+    },
+    "SmartBit.WeLearn360.CoreAPI.dll": {
+      "commandName": "Project",
+      "commandLineArgs": "-a SmartBit.WeLearn360.CoreAPI.dll",
+      "workingDirectory": "C:\\Users\\Michael\\source\\repos\\WeLearn360\\SmartBit.WeLearn360.CoreAPI\\bin\\Debug\\net8.0\\"
     }
   }
 }

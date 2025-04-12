@@ -5,9 +5,10 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Mono.TextTemplating;
 using SmartBit.Tools.ApiGen.Models;
 using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
+using System.Runtime.Loader;
 namespace SmartBit.Tools.ApiGen;
 
 partial class Program
@@ -22,7 +23,21 @@ partial class Program
     {
         var parserResults = Parser.Default.ParseArguments<Options>(args);
         var options = parserResults.Value;
-        var assembly = Assembly.LoadFrom(options.Assembly);
+
+        var resolver = new AssemblyDependencyResolver(options.Assembly);
+        var alc = new AssemblyLoadContext("MyLoadContext", true);
+        alc.Resolving += (alc, assemblyName) =>
+        {
+            var assemblyPath = resolver.ResolveAssemblyToPath(assemblyName);
+            if (assemblyPath != null)
+            {
+                return alc.LoadFromAssemblyPath(assemblyPath);
+            }
+            return null;
+        };
+        var assembly = alc.LoadFromAssemblyPath("C:\\Users\\Michael\\source\\repos\\WeLearn360\\SmartBit.WeLearn360.CoreAPI\\bin\\Debug\\net8.0\\SmartBit.WeLearn360.CoreAPI.dll");
+
+        //var assembly = Assembly.LoadFrom(options.Assembly);
         var dbContextType = assembly.GetTypes()
             .FirstOrDefault(t => typeof(DbContext).IsAssignableFrom(t) && !t.IsAbstract);
         if (dbContextType == null)
@@ -84,19 +99,19 @@ partial class Program
         }
         foreach (var entityType in model.GetEntityTypes().Take(1))
         {
-           if (string.IsNullOrEmpty(entityType.GetTableName()))
+            if (string.IsNullOrEmpty(entityType.GetTableName()))
                 continue;
             Console.WriteLine(RunTemplate(host, compiledTemplate, model, entityType));
         }
-}
+    }
 
-    public  static string RunTemplate(TemplateGenerator host, CompiledTemplate compiledTemplate, IModel efModel, IEntityType efEntityType)
+    public static string RunTemplate(TemplateGenerator host, CompiledTemplate compiledTemplate, IModel efModel, IEntityType efEntityType)
     {
         var session = host.GetOrCreateSession();
         session.Clear();
         session.Add("EntityType", efEntityType);
         session.Add("Model", efModel);
-        return compiledTemplate.Process(); ;
+        return compiledTemplate.Process();
     }
 
 }

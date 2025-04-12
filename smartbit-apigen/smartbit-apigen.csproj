@@ -18,15 +18,15 @@
 	  <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
 	  <AssemblyVersion>1.0.0.1</AssemblyVersion>
 	  <FileVersion>1.0.0.1</FileVersion>
-	  <AnalysisLevel>6.0-all</AnalysisLevel>
-	  <EnableNETAnalyzers>True</EnableNETAnalyzers>	   
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="DotLiquid" Version="2.3.197" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.4" />
     <PackageReference Include="Mono.TextTemplating" Version="3.0.0" />
+	<FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="entity.tt">
