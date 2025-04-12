@@ -81,6 +81,7 @@ partial class Program
         {
             foreach (var entityType in model.GetEntityTypes().Take(1))
             {
+
                 if (string.IsNullOrEmpty(entityType.GetTableName()))
                     continue;
                 string outputFilePath = GetOutputFilePath(options, entityType);
@@ -100,9 +101,11 @@ partial class Program
         var host = new TemplateGenerator();
         host.ReferencePaths.Add(typeof(IEntityType).Assembly.Location);
         host.Refs.Add(typeof(IEntityType).Assembly.Location);
+        host.Refs.Add(typeof(IList<>).Assembly.Location);
         host.Refs.Add(typeof(RelationalEntityTypeExtensions).Assembly.Location);
         host.Imports.Add("Microsoft.EntityFrameworkCore.Metadata");
         host.Imports.Add("Microsoft.EntityFrameworkCore");
+        host.Imports.Add("System.Collections.Generic");
         CompiledTemplate compiledTemplate = null;
         try
         {
@@ -123,8 +126,21 @@ partial class Program
         }
         foreach (var entityType in model.GetEntityTypes())
         {
-            if (string.IsNullOrEmpty(entityType.GetTableName()))
-                continue;
+
+            Console.WriteLine(entityType.Name);
+            foreach (var property in entityType.GetProperties())
+            {
+                if (entityType.FindNavigation(property.Name) == null)
+                {
+                    var typeName = property.GetTypeMapping().ClrType.Name;
+                    var nullable = property.IsNullable ? "?" : "";
+                    Console.WriteLine($"    public {typeName}{nullable} {property.Name} {{ get; set; }}");
+                }
+            }
+
+            
+            var dbSetname = GetDbSetName(dbContext.GetType(), entityType);
+            entityType.SetRuntimeAnnotation("DbSetName", dbSetname);
             var generatedControllerCode = RunTemplate(host, compiledTemplate, model, entityType);
             var destFileName = GetOutputFilePath(options, entityType);
             if(options.Force || !File.Exists(destFileName))
@@ -135,12 +151,22 @@ partial class Program
         Console.WriteLine("Code generation complete!");
     }
 
+    public static string GetDbSetName(Type ctx, IEntityType entityType)
+    {
+        var dbSetProperty = ctx.GetProperties()
+            .FirstOrDefault(p => p.PropertyType.IsGenericType
+                && p.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>)
+                && p.PropertyType.GetGenericArguments()[0].Name == entityType.ClrType.Name);
+
+        return dbSetProperty?.Name;
+    }
+
     private static string GetOutputFilePath(Options options, IEntityType entityType)
     {
         string currentDirectory = Directory.GetCurrentDirectory();
         return  Path.Combine(currentDirectory,
                   options.OutputDirectory,
-                  $"{entityType.ClrType.Name}Controller.cs");
+                  $"_auto_{entityType.ClrType.Name}Controller.cs");
     }
 
     public static string RunTemplate(TemplateGenerator host, CompiledTemplate compiledTemplate, IModel efModel, IEntityType efEntityType)
