@@ -1,4 +1,6 @@
 ﻿using CommandLine;
+using CommandLine.Text;
+using Microsoft.AspNetCore.Html;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -11,28 +13,45 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using YamlDotNet.Serialization;
 namespace SmartBit.Tools.ApiGen;
 
 partial class Program
 {
     class Options
     {
-        [Option('a', "assembly", Required = true, HelpText = "assembly path")]
+        [Value(0, Default = "apigen.yml", Required = false, HelpText = "Path to configuration file", MetaName = "Configuration File")]
+        public string ConfigFile { get; set; }
+
+        [Option('a', "assembly", HelpText = "assembly path")]
         public string Assembly { get; set; }
 
-        [Option('o', "output-dir", Required = false, HelpText = "Output directory")]
+        [Option('o', "output-dir",  HelpText = "Output directory")]
         public string OutputDirectory { get; set; }
 
-        [Option('n', "namespace", Required = false, HelpText = "Namespace for the generated APIs")]
+        [Option('n', "namespace",  HelpText = "Namespace for the generated APIs")]
         public string Namespace { get; set; }
 
-        [Option('f', "force", Required = false, HelpText = "Overwrite if file exists", Default = false)]
+        [Option('f', "force",  HelpText = "Overwrite if file exists", Default = false)]
         public bool Force { get; set; }
+
     }
 
+   
     static void Main(string[] args)
     {
-        var parserResults = Parser.Default.ParseArguments<Options>(args);
+        var parser = new Parser((o) =>
+        {
+            o.AutoHelp = false;
+        });
+        var parserResults = parser.ParseArguments<Options>(args);
+        parserResults.WithNotParsed((err) =>
+        {
+            var helpText = HelpText.AutoBuild(parserResults);
+            Console.WriteLine(helpText);
+            Environment.Exit(1); // Exit with non-zero code to indicate failure
+        });
+
         var options = parserResults.Value;
 
         if (options.OutputDirectory.IsNullOrEmpty())
@@ -40,7 +59,28 @@ partial class Program
             options.OutputDirectory = "Controllers";
         }
 
+        if (!string.IsNullOrEmpty(options.ConfigFile))
+        {
+            if (!File.Exists(options.ConfigFile))
+            {
+                Console.WriteLine($"Config file {options.ConfigFile} could not be found");
+                return;
+            }
+            var deserializer = new DeserializerBuilder().Build();
+            var yamlOptions = deserializer.Deserialize<Options>(File.ReadAllText(options.ConfigFile));
 
+            // Merge YAML settings with command-line options
+            options.Assembly = options.Assembly ?? yamlOptions.Assembly;
+            options.OutputDirectory = options.OutputDirectory ?? yamlOptions.OutputDirectory;
+            options.Namespace = options.Namespace ?? yamlOptions.Namespace;
+            options.Force = options.Force || yamlOptions.Force;
+        }
+
+        if (options.Assembly.IsNullOrEmpty())
+        {
+            Console.WriteLine("Assembly must be specified or path to config apigen.yml");
+            return;
+        }
 
 
         var assembly = Assembly.LoadFrom(options.Assembly);
@@ -127,25 +167,18 @@ partial class Program
         foreach (var entityType in model.GetEntityTypes())
         {
 
-            Console.WriteLine(entityType.Name);
-            foreach (var property in entityType.GetProperties())
-            {
-                if (entityType.FindNavigation(property.Name) == null)
-                {
-                    var typeName = property.GetTypeMapping().ClrType.Name;
-                    var nullable = property.IsNullable ? "?" : "";
-                    Console.WriteLine($"    public {typeName}{nullable} {property.Name} {{ get; set; }}");
-                }
-            }
-
-            
             var dbSetname = GetDbSetName(dbContext.GetType(), entityType);
             entityType.SetRuntimeAnnotation("DbSetName", dbSetname);
             var generatedControllerCode = RunTemplate(host, compiledTemplate, model, entityType);
             var destFileName = GetOutputFilePath(options, entityType);
             if(options.Force || !File.Exists(destFileName))
             {
+                if (!Directory.Exists(Path.GetDirectoryName(destFileName)))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(destFileName));
+                }
                 File.WriteAllText(destFileName, generatedControllerCode, Encoding.ASCII);
+                Console.WriteLine($"Writing: {destFileName}");
             }
         }
         Console.WriteLine("Code generation complete!");
