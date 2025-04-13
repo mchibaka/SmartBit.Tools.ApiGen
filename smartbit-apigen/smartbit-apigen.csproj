@@ -6,7 +6,7 @@
 	  <ToolCommandName>smartbit-apigen</ToolCommandName>
 	  <PackageId>SmartBit.Tools.ApiGen</PackageId>
 	  <Authors>SmartBit Consulting</Authors>
-	  <PackageVersion>2.0.0</PackageVersion>
+	  <PackageVersion>2.0.1</PackageVersion>
 	  <Title>SmartBit API Generator</Title>
 	  <Copyright>Copyright (c) 2025 SmartBit Consulting. All rights reserved.</Copyright>
 	  <PackageProjectUrl>https://www.smartbitconsulting.com</PackageProjectUrl>
@@ -16,11 +16,14 @@
 	  <Description>Tool for generating APIs based on EF Model</Description>
 	  <PackageLicenseExpression>0BSD</PackageLicenseExpression>
 	  <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
-	  <AssemblyVersion>2.0.0</AssemblyVersion>
-	  <FileVersion>2.0.0</FileVersion>
+	  <AssemblyVersion>2.0.1</AssemblyVersion>
+	  <FileVersion>2.0.1</FileVersion>
+	  <InformationalVersion>2.0.1</InformationalVersion>
+	  <SourceRevisionId>beta</SourceRevisionId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="Figgle" Version="0.5.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.4" />
     <PackageReference Include="Mono.TextTemplating" Version="3.0.0" />

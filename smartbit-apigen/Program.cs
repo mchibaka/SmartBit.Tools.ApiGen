@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 using CommandLine.Text;
-using Microsoft.AspNetCore.Html;
+using Figgle;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -26,24 +26,26 @@ partial class Program
         [Option('a', "assembly", HelpText = "assembly path")]
         public string Assembly { get; set; }
 
-        [Option('o', "output-dir",  HelpText = "Output directory")]
+        [Option('o', "output-dir", HelpText = "Output directory")]
         public string OutputDirectory { get; set; }
 
-        [Option('n', "namespace",  HelpText = "Namespace for the generated APIs")]
+        [Option('n', "namespace", HelpText = "Namespace for the generated APIs")]
         public string Namespace { get; set; }
 
-        [Option('f', "force",  HelpText = "Overwrite if file exists", Default = false)]
+        [Option('f', "force", HelpText = "Overwrite if file exists", Default = false)]
         public bool Force { get; set; }
 
     }
 
-   
+
     static void Main(string[] args)
     {
+        Console.WriteLine(FiggleFonts.Standard.Render("SmartBit ApiGen"));
+        Console.WriteLine("SmartBit API Generator is code generator that generates .net core APIs based on Entity Framework");
         var parser = new Parser((o) =>
-        {
-            o.AutoHelp = false;
-        });
+       {
+           o.AutoHelp = false;
+       });
         var parserResults = parser.ParseArguments<Options>(args);
         parserResults.WithNotParsed((err) =>
         {
@@ -171,7 +173,7 @@ partial class Program
             entityType.SetRuntimeAnnotation("DbSetName", dbSetname);
             var generatedControllerCode = RunTemplate(host, compiledTemplate, model, entityType);
             var destFileName = GetOutputFilePath(options, entityType);
-            if(options.Force || !File.Exists(destFileName))
+            if (options.Force || !File.Exists(destFileName))
             {
                 if (!Directory.Exists(Path.GetDirectoryName(destFileName)))
                 {
@@ -197,7 +199,7 @@ partial class Program
     private static string GetOutputFilePath(Options options, IEntityType entityType)
     {
         string currentDirectory = Directory.GetCurrentDirectory();
-        return  Path.Combine(currentDirectory,
+        return Path.Combine(currentDirectory,
                   options.OutputDirectory,
                   $"_auto_{entityType.ClrType.Name}Controller.cs");
     }
