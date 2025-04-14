@@ -35,6 +35,13 @@ namespace <#= nsController #>;
 [ApiController]
 public partial class <#= entityName #>Controller: <#= entityName #>ControllerBase
 {
+
+    private readonly <#= contextName #> db;
+
+    public <#= entityName #>Controller(<#= contextName #> db)
+    {
+        this.db = db;
+    }
     
     [HttpPost()]
     [Route("api/<#= entityName #>/perform-search-<#= entityName #>")]
@@ -51,22 +58,21 @@ public partial class <#= entityName #>Controller: <#= entityName #>ControllerBas
             sqlStatement += $" WHERE {whereClause}";
         }
 
-        using (var db = new <#= contextName #>())
-        { 
-            try
-            {
-                ICollection<<#=entityName#>Dto> results = await db.Database.SqlQueryRaw<<#=entityName#>Dto>
-                        (sqlStatement, criteria?.Parameters).ToArrayAsync();
-                return Ok(results);
-            }
-            catch (Exception ex)
-            {
-                return Problem(detail: ex.Message,
-                            title: "Error searching", 
-                            statusCode: (int)HttpStatusCode.InternalServerError,
-                            type: ex.GetType().Name);
-            }
+        
+        try
+        {
+            ICollection<<#=entityName#>Dto> results = await db.Database.SqlQueryRaw<<#=entityName#>Dto>
+                    (sqlStatement, criteria?.Parameters).ToArrayAsync();
+            return Ok(results);
         }
+        catch (Exception ex)
+        {
+            return Problem(detail: ex.Message,
+                        title: "Error searching", 
+                        statusCode: (int)HttpStatusCode.InternalServerError,
+                        type: ex.GetType().Name);
+        }
+        
     } 
     <# if(!isKeyless) { //Applies to tables only#>
 
@@ -80,25 +86,24 @@ public partial class <#= entityName #>Controller: <#= entityName #>ControllerBas
     [Produces(typeof(<#=entityName#>Dto))]
     public async Task<IActionResult> AddEntityToDB(<#=entityName#>Dto newEntityDto)
     {
-        using (var db = new <#= contextName #>())
-        {    
-            <#=entityName#>Dto sanitizedNewDto = onSanitizeDto(newEntityDto);
+           
+        <#=entityName#>Dto sanitizedNewDto = onSanitizeDto(newEntityDto);
             
-            ProblemDetails validationProblem = onBeforeCreateValidation(sanitizedNewDto);
-            if(validationProblem != null)
-            {
-                return Problem(validationProblem.Detail, validationProblem.Instance, validationProblem.Status, validationProblem.Title);
-            }
-            
-            if (await db.<#= entityDbSetName #>.Where(<#= GetLinqWhereClause(entityType,"sanitizedNewDto") #>).SingleOrDefaultAsync() != null)
-            {
-                return Problem($"Duplicate trap, <#=entityName#> already exist.");                
-            }
-            var efModel = sanitizedNewDto.ToEfModel();
-            db.<#= entityDbSetName #>.Add(efModel);
-            await db.SaveChangesAsync();
-            return Ok(efModel.ToDto());
+        ProblemDetails validationProblem = onBeforeCreateValidation(sanitizedNewDto);
+        if(validationProblem != null)
+        {
+            return Problem(validationProblem.Detail, validationProblem.Instance, validationProblem.Status, validationProblem.Title);
         }
+            
+        if (await db.<#= entityDbSetName #>.Where(<#= GetLinqWhereClause(entityType,"sanitizedNewDto") #>).SingleOrDefaultAsync() != null)
+        {
+            return Problem($"Duplicate trap, <#=entityName#> already exist.");                
+        }
+        var efModel = sanitizedNewDto.ToEfModel();
+        db.<#= entityDbSetName #>.Add(efModel);
+        await db.SaveChangesAsync();
+        return Ok(efModel.ToDto());
+        
     }
 
 
@@ -114,7 +119,6 @@ public partial class <#= entityName #>Controller: <#= entityName #>ControllerBas
     [Produces(typeof(ICollection<<#=entityName#>Dto>))]
     public async Task<IActionResult> GetAllAsync()
     {
-        using var db = new <#= contextName #>();
         var results = await db.<#= entityDbSetName #>.ToArrayAsync();
         return Ok(results.ToDto());
     }
@@ -130,7 +134,6 @@ public partial class <#= entityName #>Controller: <#= entityName #>ControllerBas
     [Produces(typeof(<#=entityName#>Dto))]
     public async Task<IActionResult> GetByIdAsync(<#= BuildQueryParameters(entityType) #>)
     {
-        using var db = new <#= contextName #>();
         var efEntity = await db.<#= entityDbSetName #>.Where(<#= GetLinqWhereClause(entityType) #>).SingleOrDefaultAsync();
         return Ok(efEntity.ToDto());
     }
@@ -146,59 +149,53 @@ public partial class <#= entityName #>Controller: <#= entityName #>ControllerBas
     [Produces(typeof( <#= entityName #>Dto))]
     public async Task<IActionResult> Update<#= entityName #>(<#= entityName #>Dto entityDto)
     {
-        using (var db = new <#= contextName #>())
+        
+        <#= entityName #>Dto originalEntityDto = null;
+        
+        originalEntityDto = (await db.<#= entityDbSetName #>.SingleOrDefaultAsync(<#=GetLinqWhereClause(entityType, "entityDto")#>)).ToDto();
+        if(originalEntityDto == null)
         {
-            using (var txn = db.Database.BeginTransaction())
-            {
-                <#= entityName #>Dto originalEntityDto = null;
-                using (var dbIsolatedCtx = new <#= contextName #>())
-                {
-                    originalEntityDto = (await dbIsolatedCtx.<#= entityDbSetName #>.SingleOrDefaultAsync(<#=GetLinqWhereClause(entityType, "entityDto")#>)).ToDto();
-                    if(originalEntityDto == null)
-                    {
-                        return Problem("Can't update non-existent <#= contextName #>");
-                    }
-                }
-                //Sanitize payload
-                <#= entityName #>Dto sanitizedEntityDto = PreEntityUpdate(entityDto);
+            return Problem("Can't update non-existent <#= entityName #>");
+        }
+        
+        //Sanitize payload
+        <#= entityName #>Dto sanitizedEntityDto = PreEntityUpdate(entityDto);
             
-                //Fields to ignore when detecting changes
+        //Fields to ignore when detecting changes
 <#  foreach (var property in GetPrimaryKeys(entityType))
-    {  
+{  
 #>
-                sanitizedEntityDto.<#= property.Name #> = originalEntityDto.<#= property.Name #>;
+        sanitizedEntityDto.<#= property.Name #> = originalEntityDto.<#= property.Name #>;
 <#
-    } 
+} 
 #>
                
-                //Merge original with changes incoming
-                var updatedJObject = JObject.FromObject(originalEntityDto);
-                updatedJObject.Merge(JObject.FromObject(sanitizedEntityDto));
+        //Merge original with changes incoming
+        var updatedJObject = JObject.FromObject(originalEntityDto);
+        updatedJObject.Merge(JObject.FromObject(sanitizedEntityDto));
 
-                //Validate the update
-                ProblemDetails validationProblem = onBeforeUpdateValidation(originalEntityDto, sanitizedEntityDto);
-                if (validationProblem == null)
-                {
+        //Validate the update
+        ProblemDetails validationProblem = onBeforeUpdateValidation(originalEntityDto, sanitizedEntityDto);
+        if (validationProblem == null)
+        {
 
-                    var jsonOriginalEntityInDBDto = JsonConvert.SerializeObject(originalEntityDto);
-                    var jsonUpdatedJObject = JsonConvert.SerializeObject(updatedJObject);
-                    if (jsonOriginalEntityInDBDto != jsonUpdatedJObject)
-                    {
-                        <#= entityName #> updatedEfEntity = updatedJObject.ToObject<<#= entityName #>Dto>().ToEfModel();
-                        db.Entry(updatedEfEntity);
-                        db.Entry(updatedEfEntity).State = EntityState.Modified;
-                        await db.SaveChangesAsync();
-                        txn.Commit();
-                        return Ok(updatedEfEntity.ToDto());
-                    }
-                    return Problem("No change was detected!");
-                }
-                else
-                {
-                    return Problem(validationProblem.Detail, validationProblem.Instance, validationProblem.Status, validationProblem.Title);
-                }
+            var jsonOriginalEntityInDBDto = JsonConvert.SerializeObject(originalEntityDto);
+            var jsonUpdatedJObject = JsonConvert.SerializeObject(updatedJObject);
+            if (jsonOriginalEntityInDBDto != jsonUpdatedJObject)
+            {
+                <#= entityName #> updatedEfEntity = updatedJObject.ToObject<<#= entityName #>Dto>().ToEfModel();
+                db.Entry(updatedEfEntity);
+                db.Entry(updatedEfEntity).State = EntityState.Modified;
+                await db.SaveChangesAsync();
+                return Ok(updatedEfEntity.ToDto());
             }
+            return Problem("No change was detected!");
         }
+        else
+        {
+            return Problem(validationProblem.Detail, validationProblem.Instance, validationProblem.Status, validationProblem.Title);
+        }
+           
     }
     <#}//End check for keyless (tables only)#> 
     
