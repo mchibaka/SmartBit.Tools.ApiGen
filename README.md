@@ -4,7 +4,7 @@ A tool for generating Apis from EF Context.
 
 # Customnization
 
-Clone the repo, modify the text template entity.tt to generate code to your specific needs.
+Modify the text template entity.tt to generate code to your specific needs.
 Happy coding!
 
 # How it works
