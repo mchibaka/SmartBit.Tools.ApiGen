@@ -19,9 +19,6 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SmartBit.WeLearn360.CoreAPI.Database;
-using SmartBit.WeLearn360.CoreAPI.Security;
-using SmartBit.WeLearn360.CoreAPI.Common;
 using System.Net;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;

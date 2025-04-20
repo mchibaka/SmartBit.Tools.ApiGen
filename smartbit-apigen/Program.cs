@@ -30,7 +30,7 @@ partial class Program
         public string OutputDirectory { get; set; }
 
         [Option('n', "namespace", HelpText = "Namespace for the generated APIs")]
-        public string Namespace { get; set; }
+        public string Namespace { get; set; } = null;
 
         [Option('f', "force", HelpText = "Overwrite if file exists", Default = false)]
         public bool Force { get; set; }
@@ -61,13 +61,10 @@ partial class Program
             options.OutputDirectory = "Controllers";
         }
 
-        if (!string.IsNullOrEmpty(options.ConfigFile))
+       
+
+        if (!string.IsNullOrEmpty(options.ConfigFile) && File.Exists(options.ConfigFile))
         {
-            if (!File.Exists(options.ConfigFile))
-            {
-                Console.WriteLine($"Config file {options.ConfigFile} could not be found");
-                return;
-            }
             var deserializer = new DeserializerBuilder().Build();
             var yamlOptions = deserializer.Deserialize<Options>(File.ReadAllText(options.ConfigFile));
 
@@ -77,10 +74,13 @@ partial class Program
             options.Namespace = options.Namespace ?? yamlOptions.Namespace;
             options.Force = options.Force || yamlOptions.Force;
         }
-
         if (options.Assembly.IsNullOrEmpty())
         {
-            Console.WriteLine("Assembly must be specified or path to config apigen.yml");
+            if(!string.IsNullOrEmpty(options.ConfigFile) && !File.Exists(options.ConfigFile))
+            {
+                Console.WriteLine($"ERROR: File not found {options.ConfigFile}");
+            }
+            Console.WriteLine("ERROR: Assembly must be specified or path to config apigen.yml");
             return;
         }
 
@@ -138,7 +138,7 @@ partial class Program
         string controllerNameSpace = GetCombinedNamespace(assemblyNameSpace, options.OutputDirectory);
         model.AddRuntimeAnnotation("ContextName", dbContext.GetType().Name);
         model.AddRuntimeAnnotation("AssemblyNamespace", assemblyNameSpace);
-        model.AddRuntimeAnnotation("ControllerNamespace", controllerNameSpace);
+        model.AddRuntimeAnnotation("ControllerNamespace", options.Namespace ?? controllerNameSpace);
         var ttContent = ResourceHelper.ReadEmbeddedResource("smartbit-apigen.entity.tt");
         var host = new TemplateGenerator();
         host.ReferencePaths.Add(typeof(IEntityType).Assembly.Location);
